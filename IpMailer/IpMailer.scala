@@ -3,7 +3,7 @@ import java.io.{BufferedReader, InputStreamReader}
 import java.net.URL
 import java.security.Security
 import java.util.{Date, Properties}
-import javax.mail.{Message, Session}
+import javax.mail.{Message, MessagingException, Session}
 import javax.mail.internet.{InternetAddress, MimeMessage}
 
 object IpMailer {
@@ -18,7 +18,7 @@ object IpMailer {
 
   def genError(except: Exception): String = {
     "Yo imma let it finish. But IpMailer had one of the worst failures of all time.\n\n" +
-    except + "\n\nHumbly yours,\nJohnny IP"
+    except.printStackTrace + "\n\nHumbly yours,\nJohnny IP"
   }
 
 
@@ -26,6 +26,7 @@ object IpMailer {
 
 
   def send(message: String): Unit = {
+
     val username = "vandeweertj"
     val password = "qyoqgdyvknckbyhw"
 
@@ -52,9 +53,19 @@ object IpMailer {
     msg.setSentDate(new Date())
 
     val transport = session.getTransport("smtps")
-    transport.connect("smtp.gmail.com", username, password)
-    transport.sendMessage(msg, msg.getAllRecipients())
-    transport.close()
+    var sent = false
+
+    while(!sent) {
+      try {
+        transport.connect("smtp.gmail.com", username, password)
+        transport.sendMessage(msg, msg.getAllRecipients())
+        transport.close()
+        sent = true
+      }
+      catch {
+        case me: MessagingException => Thread.sleep(10000)
+      }
+    }
   }
 
 
