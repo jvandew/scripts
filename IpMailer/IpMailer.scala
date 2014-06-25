@@ -1,5 +1,7 @@
 import com.sun.mail.smtp.SMTPTransport
-import java.io.{BufferedReader, InputStreamReader}
+import com.sun.net.ssl.internal.ssl.Provider
+import java.io.{BufferedReader, ByteArrayOutputStream, InputStreamReader,
+                PrintStream}
 import java.net.URL
 import java.security.Security
 import java.util.{Date, Properties}
@@ -9,6 +11,22 @@ import javax.mail.internet.{InternetAddress, MimeMessage}
 object IpMailer {
 
   val url = new URL("http://icanhazip.com")
+  val username = "vandeweertj"
+  val password = "qyoqgdyvknckbyhw"
+
+  Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider)
+  val SSL_FACTORY = "javax.net.ssl.SSLSocketFactory"
+
+  val props = System.getProperties
+  props.setProperty("mail.smtps.host", "smtp.gmail.com")
+  props.setProperty("mail.smtp.socketFactory.class", SSL_FACTORY)
+  props.setProperty("mail.smtp.socketFactory.fallback", "false")
+  props.setProperty("mail.smtp.port", "465")
+  props.setProperty("mail.smtp.socketFactory.port", "465")
+  props.setProperty("mail.smtps.auth", "true")
+  props.put("mail.smtps.quitwait", "false")
+
+  val session = Session.getInstance(props, null)
 
 
   def getIpAddress: String = {
@@ -16,41 +34,32 @@ object IpMailer {
     reader.readLine
   }
 
+
   def genError(except: Exception): String = {
-    "Yo imma let it finish. But IpMailer had one of the worst failures of all time.\n\n" +
-    except.printStackTrace + "\n\nHumbly yours,\nJohnny IP"
+
+    val snarkyMsg = "SYSTEM MALFUNCTION: OVERRIDE\n\n"
+    val signature = "\n\nRESUME OPERATIVE,\nUNIT 376"
+
+    val byteOut = new ByteArrayOutputStream
+    val printOut = new PrintStream(byteOut)
+    except.printStackTrace(printOut)
+    printOut.close
+
+    snarkyMsg + byteOut.toString + signature
   }
 
 
-  def genMessage(data: String): String = data + "\n\nHumbly yours,\nJohnny IP"
+  def genMessage(data: String): String = data + "\n\nROGER ROGER,\nUNIT 376"
 
 
   def send(message: String): Unit = {
-
-    val username = "vandeweertj"
-    val password = "qyoqgdyvknckbyhw"
-
-    Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider)
-    val SSL_FACTORY = "javax.net.ssl.SSLSocketFactory"
-
-    // Get a Properties object
-    val props = System.getProperties()
-    props.setProperty("mail.smtps.host", "smtp.gmail.com")
-    props.setProperty("mail.smtp.socketFactory.class", SSL_FACTORY)
-    props.setProperty("mail.smtp.socketFactory.fallback", "false")
-    props.setProperty("mail.smtp.port", "465")
-    props.setProperty("mail.smtp.socketFactory.port", "465")
-    props.setProperty("mail.smtps.auth", "true")
-    props.put("mail.smtps.quitwait", "false")
-
-    val session = Session.getInstance(props, null)
 
     val msg = new MimeMessage(session)
     msg.setFrom(new InternetAddress(username + "@gmail.com"))
     msg.setRecipients(Message.RecipientType.TO, username + "@gmail.com")
     msg.setSubject("[Alert] New Server IP Address");
     msg.setText(message, "UTF-8")
-    msg.setSentDate(new Date())
+    msg.setSentDate(new Date)
 
     val transport = session.getTransport("smtps")
     var sent = false
@@ -58,7 +67,7 @@ object IpMailer {
     while(!sent) {
       try {
         transport.connect("smtp.gmail.com", username, password)
-        transport.sendMessage(msg, msg.getAllRecipients())
+        transport.sendMessage(msg, msg.getAllRecipients)
         transport.close()
         sent = true
       }
