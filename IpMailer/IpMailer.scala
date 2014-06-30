@@ -2,7 +2,7 @@ import com.sun.mail.smtp.SMTPTransport
 import com.sun.net.ssl.internal.ssl.Provider
 import java.io.{BufferedReader, ByteArrayOutputStream, InputStreamReader,
                 PrintStream}
-import java.net.URL
+import java.net.{URL, UnknownHostException}
 import java.security.Security
 import java.util.{Date, Properties}
 import javax.mail.{Message, MessagingException, Session}
@@ -90,6 +90,7 @@ object IpMailer {
           send(genMessage(newIp))
         }
       } catch {
+        case uhe: UnknownHostException => () // dns issues; try again later
         case e: Exception => send(genError(e))
       }
       Thread.sleep(300*1000) // five minutes
