@@ -4,6 +4,7 @@
 
 import codecs
 from HTMLParser import HTMLParser
+from operator import itemgetter
 
 class SongTableParser(HTMLParser):
 
@@ -71,12 +72,24 @@ class SongTableParser(HTMLParser):
     self.__fieldNum__ -= 1
 
 
+def printSongDict(dic):
+  for artist in sortArtists(dic):
+    print artist
+    for song in dic[artist]:
+      print '\t\t%s : %d' % (song, dic[artist][song])
+
+# returns a list of artists sorted by number of shazams
+def sortArtists(dic):
+  sortDic = sorted(dic.iteritems(), key=lambda x: sum(itemgetter(1)(x).itervalues()), reverse=True)
+  return map(itemgetter(0), sortDic)
+
+
 # script starts here
 parser = SongTableParser()
 html = codecs.open('myshazam-history.html', encoding='utf-8')
 parser.feed(html.read())
 
-print parser.songDict
+printSongDict(parser.songDict)
 
 html.close()
 
