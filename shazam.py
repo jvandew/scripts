@@ -2,6 +2,7 @@
 # song. Song tags are expected to be provided in the html format provided
 # on the Shazam app website.
 
+import argparse
 import codecs
 from copy import deepcopy
 from HTMLParser import HTMLParser
@@ -102,13 +103,16 @@ def sortArtists(dic):
 
 
 # script starts here
+argparser = argparse.ArgumentParser(description='This is a script to aggregate Shazam song tags together by artist to create an organized list for downloading songs.')
+argparser.add_argument('shazam_history', help='Shazam history in the html format available for download on the website')
+argparser.add_argument('music_dir', help='Location of user Music library; used to filter existing songs from the list')
+args = argparser.parse_args()
+
 parser = SongTableParser()
-html = codecs.open('myshazam-history.html', encoding='utf-8')
+html = codecs.open(args.shazam_history, encoding='utf-8')
 parser.feed(html.read())
 
-musicDir = '/Users/jacob/Music'
-
-filteredDict = filterSongDict(parser.songDict, musicDir)
+filteredDict = filterSongDict(parser.songDict, args.music_dir)
 printSongDict(filteredDict)
 
 html.close()
