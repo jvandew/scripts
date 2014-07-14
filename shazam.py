@@ -3,8 +3,10 @@
 # on the Shazam app website.
 
 import codecs
+from copy import deepcopy
 from HTMLParser import HTMLParser
 from operator import itemgetter
+from os.path import isfile, join
 
 class SongTableParser(HTMLParser):
 
@@ -72,11 +74,26 @@ class SongTableParser(HTMLParser):
     self.__fieldNum__ -= 1
 
 
+# Filter out songs from Shazam history that are already present in the music
+# library. Necessary due to Shazam's broken website refusing to delete tags.
+def filterSongDict(dic, musicDir):
+  copy = deepcopy(dic)
+
+  for artist in dic:
+    for song in dic[artist]:
+      if (isfile(join(musicDir, artist, song + '.mp3')) and
+          artist in copy and song in copy[artist]):
+        del copy[artist][song]
+        if not copy[artist]:
+          del copy[artist]
+
+  return copy
+
 def printSongDict(dic):
   for artist in sortArtists(dic):
-    print artist
+    print artist.encode('utf_8')
     for song in dic[artist]:
-      print '\t\t%s : %d' % (song, dic[artist][song])
+      print ('\t\t%s : %d' % (song, dic[artist][song])).encode('utf_8')
 
 # returns a list of artists sorted by number of shazams
 def sortArtists(dic):
@@ -89,7 +106,10 @@ parser = SongTableParser()
 html = codecs.open('myshazam-history.html', encoding='utf-8')
 parser.feed(html.read())
 
-printSongDict(parser.songDict)
+musicDir = '/Users/jacob/Music'
+
+filteredDict = filterSongDict(parser.songDict, musicDir)
+printSongDict(filteredDict)
 
 html.close()
 
