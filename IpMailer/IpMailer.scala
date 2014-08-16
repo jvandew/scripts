@@ -11,8 +11,6 @@ import javax.mail.internet.{InternetAddress, MimeMessage}
 object IpMailer {
 
   val url = new URL("http://icanhazip.com")
-  val username = "vandeweertj"
-  val password = "qyoqgdyvknckbyhw"
 
   Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider)
   val SSL_FACTORY = "javax.net.ssl.SSLSocketFactory"
@@ -52,7 +50,7 @@ object IpMailer {
   def genMessage(data: String): String = data + "\n\nROGER ROGER,\nUNIT 376"
 
 
-  def send(message: String): Unit = {
+  def send(username: String, password: String)(message: String): Unit = {
 
     val msg = new MimeMessage(session)
     msg.setFrom(new InternetAddress(username + "@gmail.com"))
@@ -80,6 +78,7 @@ object IpMailer {
 
   def main(args: Array[String]) {
 
+    val sendMsg = send(args(0), args(1))_
     var ip = ""
 
     while(true) {
@@ -87,14 +86,15 @@ object IpMailer {
         var newIp = getIpAddress
         if (newIp != ip) {
           ip = newIp
-          send(genMessage(newIp))
+          sendMsg(genMessage(newIp))
         }
       } catch {
         case uhe: UnknownHostException => () // dns issues; try again later
-        case e: Exception => send(genError(e))
+        case e: Exception => sendMsg(genError(e))
       }
       Thread.sleep(300*1000) // five minutes
     }
   }
 
 }
+
