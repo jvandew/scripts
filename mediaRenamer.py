@@ -17,9 +17,9 @@ for filename in listdir(args.music_dir):
   if filename.endswith(args.file_type):
     new_name = '{0}{1}.{2}'.format(args.replace, filename[args.drop_chars:args.end_index], args.file_type)
     renames.append((filename, new_name))
-    print 'Renaming \'{0}\' to \'{1}\'.'.format(filename, new_name)
+    print('Renaming \'{0}\' to \'{1}\'.'.format(filename, new_name))
 
-print ''
+print('')
 cont = raw_input('Continue? [y/n]: ').lower()
 
 if cont == 'y':
