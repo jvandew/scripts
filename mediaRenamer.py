@@ -20,7 +20,7 @@ for filename in listdir(args.music_dir):
     print('Renaming \'{0}\' to \'{1}\'.'.format(filename, new_name))
 
 print('')
-cont = raw_input('Continue? [y/n]: ').lower()
+cont = input('Continue? [y/n]: ').lower()
 
 if cont == 'y':
   for filename, new_name in renames:
