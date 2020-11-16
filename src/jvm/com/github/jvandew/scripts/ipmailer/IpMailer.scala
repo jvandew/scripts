@@ -1,3 +1,4 @@
+import org.simplejavamail.email._
 import com.sun.mail.smtp.SMTPTransport
 import com.sun.net.ssl.internal.ssl.Provider
 import java.io.{BufferedReader, ByteArrayOutputStream, InputStreamReader,
