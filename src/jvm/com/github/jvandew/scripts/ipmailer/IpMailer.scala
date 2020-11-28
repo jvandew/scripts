@@ -1,101 +1,96 @@
-import org.simplejavamail.email._
-import com.sun.mail.smtp.SMTPTransport
-import com.sun.net.ssl.internal.ssl.Provider
-import java.io.{BufferedReader, ByteArrayOutputStream, InputStreamReader,
-                PrintStream}
+package com.github.jvandew.scripts.ipmailer
+
+import java.io.{BufferedReader, ByteArrayOutputStream, InputStreamReader, PrintStream}
 import java.net.{URL, UnknownHostException}
-import java.security.Security
-import java.util.{Date, Properties}
-import javax.mail.{Message, MessagingException, Session}
-import javax.mail.internet.{InternetAddress, MimeMessage}
+import org.simplejavamail.MailException
+import org.simplejavamail.api.email.Email
+import org.simplejavamail.api.mailer.Mailer
+import org.simplejavamail.api.mailer.config.TransportStrategy
+import org.simplejavamail.email.EmailBuilder
+import org.simplejavamail.mailer.MailerBuilder
 
 object IpMailer {
 
-  val url = new URL("http://icanhazip.com")
+  val ipUrl = new URL("http://icanhazip.com")
+  val smtpHost = "smtp.gmail.com"
+  val smtpPort = 465
 
-  Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider)
-  val SSL_FACTORY = "javax.net.ssl.SSLSocketFactory"
+  def genError(exception: Exception): String = {
+    val snarkyMsg = "SYSTEM MALFUNCTION: OVERRIDE"
+    val signature = "RESUME OPERATIVE,\nUNIT 376"
 
-  val props = System.getProperties
-  props.setProperty("mail.smtps.host", "smtp.gmail.com")
-  props.setProperty("mail.smtp.socketFactory.class", SSL_FACTORY)
-  props.setProperty("mail.smtp.socketFactory.fallback", "false")
-  props.setProperty("mail.smtp.port", "465")
-  props.setProperty("mail.smtp.socketFactory.port", "465")
-  props.setProperty("mail.smtps.auth", "true")
-  props.put("mail.smtps.quitwait", "false")
+    val byteStream = new ByteArrayOutputStream
+    val printStream = new PrintStream(byteStream)
+    exception.printStackTrace(printStream)
+    printStream.close()
 
-  val session = Session.getInstance(props, null)
-
-
-  def getIpAddress: String = {
-    val reader = new BufferedReader(new InputStreamReader(url.openStream))
-    reader.readLine
+    s"${snarkyMsg}\n\n${byteStream.toString}\n\n${signature}"
   }
 
+  def genMessage(data: String): String = s"${data}\n\nROGER ROGER,\nUNIT 376"
 
-  def genError(except: Exception): String = {
-
-    val snarkyMsg = "SYSTEM MALFUNCTION: OVERRIDE\n\n"
-    val signature = "\n\nRESUME OPERATIVE,\nUNIT 376"
-
-    val byteOut = new ByteArrayOutputStream
-    val printOut = new PrintStream(byteOut)
-    except.printStackTrace(printOut)
-    printOut.close
-
-    snarkyMsg + byteOut.toString + signature
+  def getIpAddress(): String = {
+    val reader = new BufferedReader(new InputStreamReader(ipUrl.openStream()))
+    reader.readLine()
   }
 
+  def newEmail(username: String, message: String): Email = {
+    val gmailAddress = s"${username}@gmail.com"
+    EmailBuilder
+      .startingBlank
+      .from(gmailAddress)
+      .to(gmailAddress)
+      .withPlainText(message)
+      .withSubject("[Alert] New Server IP Address")
+      .buildEmail()
+  }
 
-  def genMessage(data: String): String = data + "\n\nROGER ROGER,\nUNIT 376"
+  def newMailer(username: String, password: String): Mailer = {
+    MailerBuilder
+      .withDebugLogging(true)
+      .withSMTPServer(smtpHost, smtpPort, username, password)
+      .withTransportStrategy(TransportStrategy.SMTPS)
+      .buildMailer()
+  }
 
-
-  def send(username: String, password: String)(message: String): Unit = {
-
-    val msg = new MimeMessage(session)
-    msg.setFrom(new InternetAddress(username + "@gmail.com"))
-    msg.setRecipients(Message.RecipientType.TO, username + "@gmail.com")
-    msg.setSubject("[Alert] New Server IP Address");
-    msg.setText(message, "UTF-8")
-    msg.setSentDate(new Date)
-
-    val transport = session.getTransport("smtps")
+  def send(mailer: Mailer, email: Email): Unit = {
     var sent = false
 
-    while(!sent) {
+    while (!sent) {
       try {
-        transport.connect("smtp.gmail.com", username, password)
-        transport.sendMessage(msg, msg.getAllRecipients)
-        transport.close()
+        mailer.sendMail(email)
         sent = true
       }
       catch {
-        case me: MessagingException => Thread.sleep(10000)
+        case mailException: MailException => {
+          mailException.printStackTrace()
+          Thread.sleep(10000) // 10 seconds
+        }
       }
     }
   }
 
+  def main(args: Array[String]): Unit = {
+    val Array(username, password) = args
+    val mailer = newMailer(username, password)
 
-  def main(args: Array[String]) {
-
-    val sendMsg = send(args(0), args(1))_
     var ip = ""
-
-    while(true) {
+    while (true) {
       try {
-        var newIp = getIpAddress
+        var newIp = getIpAddress()
         if (newIp != ip) {
           ip = newIp
-          sendMsg(genMessage(newIp))
+          val newIpEmail = newEmail(username, genMessage(newIp))
+          send(mailer, newIpEmail)
         }
       } catch {
-        case uhe: UnknownHostException => () // dns issues; try again later
-        case e: Exception => sendMsg(genError(e))
+        case _: UnknownHostException => () // dns issues; try again later
+        case exception: Exception => {
+          val errorEmail = newEmail(username, genError(exception))
+          send(mailer, errorEmail)
+        }
       }
-      Thread.sleep(300*1000) // five minutes
+      Thread.sleep(300000) // 5 minutes
     }
   }
-
 }
-
