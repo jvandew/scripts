@@ -1,7 +1,8 @@
 package com.github.jvandew.scripts.ipmailer
 
 import java.io.{BufferedReader, ByteArrayOutputStream, InputStreamReader, PrintStream}
-import java.net.{URL, UnknownHostException}
+import java.net.{ConnectException, URL, UnknownHostException}
+import java.util.Date
 import org.simplejavamail.MailException
 import org.simplejavamail.api.email.Email
 import org.simplejavamail.api.mailer.Mailer
@@ -84,13 +85,16 @@ object IpMailer {
           send(mailer, newIpEmail)
         }
       } catch {
-        case _: UnknownHostException => () // dns issues; try again later
-        case exception: Exception => {
-          val errorEmail = newEmail(username, genError(exception))
+        case _: ConnectException | _: UnknownHostException => {
+          // dns/connection issues; try again later
+          println(s"${new Date} - connection error fetching IP address")
+        }
+        case other: Exception => {
+          val errorEmail = newEmail(username, genError(other))
           send(mailer, errorEmail)
         }
       }
-      Thread.sleep(300000) // 5 minutes
+      Thread.sleep(600000) // 10 minutes
     }
   }
 }
