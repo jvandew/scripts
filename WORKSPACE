@@ -28,13 +28,26 @@ http_archive(
     ),
 )
 load("@rules_jvm_external//:defs.bzl", "maven_install")
+load("@rules_jvm_external//:specs.bzl", "maven")
 
 # thirdparty deps here
 maven_install(
     artifacts = [
-        "com.sun.mail:jakarta-mail:1.6.5",
-        "org.simplejavamail:core-module:6.4.4",
-        "org.simplejavamail:simple-java-mail:6.4.4",
+        maven.artifact(
+            group = "com.sun.mail",
+            artifact = "jakarta-mail",
+            version = "1.6.5",
+        ),
+        maven.artifact(
+            group = "org.simplejavamail",
+            artifact = "core-module",
+            version = "6.4.4",
+        ),
+        maven.artifact(
+            group = "org.simplejavamail",
+            artifact = "simple-java-mail",
+            version = "6.4.4",
+        )
     ],
     repositories = [
         "https://repo1.maven.org/maven2",

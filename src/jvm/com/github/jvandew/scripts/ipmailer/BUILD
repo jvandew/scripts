@@ -7,9 +7,7 @@ scala_library(
         "//:__pkg__",
     ],
     deps = [
-        "@maven//:com_sun_mail_jakarta_mail",
-        "@maven//:org_simplejavamail_core_module",
-        "@maven//:org_simplejavamail_simple_java_mail",
+        "//:simple-java-mail",
     ],
 )
 
