@@ -1,7 +1,7 @@
 package com.github.jvandew.scripts.ipmailer
 
 import java.io.{BufferedReader, ByteArrayOutputStream, InputStreamReader, PrintStream}
-import java.net.{ConnectException, URL, UnknownHostException}
+import java.net.{ConnectException, NoRouteToHostException, URL, UnknownHostException}
 import java.util.Date
 import org.simplejavamail.MailException
 import org.simplejavamail.api.email.Email
@@ -85,7 +85,7 @@ object IpMailer {
           send(mailer, newIpEmail)
         }
       } catch {
-        case _: ConnectException | _: UnknownHostException => {
+        case _: ConnectException | _: NoRouteToHostException | _: UnknownHostException => {
           // dns/connection issues; try again later
           println(s"${new Date} - connection error fetching IP address")
         }
