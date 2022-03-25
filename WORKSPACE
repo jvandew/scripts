@@ -58,13 +58,13 @@ load("@maven//:defs.bzl", "pinned_maven_install")
 pinned_maven_install()
 
 # scala setup
-rules_scala_version = "376765b8cb2b82d201b05f359d3b4faa6229eefa"
+rules_scala_version = "a2b971d85cdf846ed9007eeaf022065797fdb5ec"
 http_archive(
     name = "io_bazel_rules_scala",
     strip_prefix = "rules_scala-{}".format(rules_scala_version),
     type = "zip",
     url = "https://github.com/bazelbuild/rules_scala/archive/{}.zip".format(rules_scala_version),
-    sha256 = "5d3cbe75503af9a4c9ac2905c46326ce7364fe2124f0441265fcbdf12003c0d0",
+    sha256 = "f4199485d1e013216fb69c910259a333ab20208e885ee10e5d2f06c4a37b8bc1"
 )
 load("@io_bazel_rules_scala//:scala_config.bzl", "scala_config")
 scala_config(
@@ -77,14 +77,9 @@ scala_register_toolchains()
 load("@io_bazel_rules_scala//scala:scala.bzl", "scala_repositories")
 scala_repositories()
 
-# protobuf needed by rules_scala?
-# protobuf_version="3.11.3"
-# http_archive(
-#     name = "com_google_protobuf",
-#     url = "https://github.com/protocolbuffers/protobuf/archive/v%s.tar.gz" % protobuf_version,
-#     strip_prefix = "protobuf-%s" % protobuf_version,
-#     sha256 = "cf754718b0aa945b00550ed7962ddc167167bd922b842199eeb6505e6f344852",
-# )
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+rules_proto_dependencies()
+rules_proto_toolchains()
 
 # Dependencies needed for google_protobuf.
 # You may need to modify this if your project uses google_protobuf for other purposes.

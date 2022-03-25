@@ -1,0 +1,2 @@
+build --incompatible_java_common_parameters=false
+build --verbose_failures
